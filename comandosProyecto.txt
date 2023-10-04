@@ -1,0 +1,831 @@
+SPOOL "C:\Users\LENOVO\Documents\SEMESTRE6\BD\proyecto\SPOOL.txt"
+
+****CREADOR DE USUARIO****
+--Creacion de usuario 
+create user proyectoEquipo5 identified by proyectoEquipo5 default tablespace users;
+--asignamos espacio ilimitado en 
+--tablespace de nuestro usuario proyectoEquipo5
+grant unlimited tablespace to proyectoEquipo5;
+--Asignamos permisos al usuario 
+grant connect, resource, create view, create any index to proyectoEquipo5;
+--Desbloqueamos al usuario HR
+alter user hr identified by hr account unlock;
+--Verificamos la conexion del usuario a la base de datos
+conn proyectoEquipo5/proyectoEquipo5
+--Vemos el usuario conectado
+show user;
+
+****CREACION DE TABLAS ****
+--Creacion de la tabla PROVEEDOR
+CREATE TABLE PROVEEDOR(
+    idProveedor INT NOT NULL,
+    nombreProv VARCHAR(20) NOT NULL,
+    cuentaBancariaProv CHAR(15) NOT NULL,
+    correoProv VARCHAR(30),
+    CONSTRAINT IdProveedorPK PRIMARY KEY(idProveedor),
+    CONSTRAINT cuentaBancariaProv_Unique UNIQUE(cuentaBancariaProv),
+    CONSTRAINT correoProv_Unique UNIQUE(correoProv)
+    );
+
+--Creacion PROVEEDORTEL
+CREATE TABLE PROVEEDORTEL(
+    idProveedor INT NOT NULL,
+    telefonoProv CHAR(10) NOT NULL,
+    CONSTRAINT idProveedorTelPK PRIMARY KEY(idProveedor, telefonoProv),
+    CONSTRAINT telefonoProvUnique UNIQUE(telefonoProv));
+
+--Creacion PROVEEDORCUENTARED
+CREATE TABLE PROVEEDORCUENTARED(
+    idProveedor INT NOT NULL,
+    cuentaRedSocialProv VARCHAR(30) NOT NULL,
+    CONSTRAINT idProveedorRedPK PRIMARY KEY(idProveedor,cuentaRedSocialProv),
+    CONSTRAINT cuentaRedSocial_Unique UNIQUE(cuentaRedSocialProv));
+
+--Creacion ARTICULO
+CREATE TABLE ARTICULO(
+    idArticulo INT NOT NULL,
+    cantidadArticulo INT NOT NULL,
+    disponibilidad VARCHAR(15) NOT NULL,
+    precioArticulo NUMBER NOT NULL,
+    nombArticulo VARCHAR(30) NOT NULL,
+    idProveedor INT NOT NULL,
+    CONSTRAINT idArticuloPK PRIMARY KEY(idArticulo),
+    CONSTRAINT idProveedorFK FOREIGN KEY(idProveedor) REFERENCES proveedor,
+    CONSTRAINT disponibilidadCK CHECK(disponibilidad IN ('Agotado','Disponible')));
+
+--Creacion ARTEMPORADA
+CREATE TABLE ARTEMPORADA(
+    idArtTemporada INT NOT NULL,
+    idArticulo INT NOT NULL,
+    numTemporada INT NOT NULL,
+    nombTemporada VARCHAR(20) NOT NULL,
+    fechaInicio DATE NOT NULL,
+    fechaCierre DATE NOT NULL,
+    tiempoTemporada CHAR(15) NOT NULL,
+    CONSTRAINT idArtTemporadaPK PRIMARY KEY(idArtTemporada),
+    CONSTRAINT idArticuloFK FOREIGN KEY(idArticulo) REFERENCES articulo,
+    CONSTRAINT Art_numTemp_Unique UNIQUE(idArticulo, numTemporada));
+
+
+--Creacion CLIENTE
+CREATE TABLE CLIENTE(
+    idCliente INT NOT NULL,
+    pilaCte VARCHAR(15) NOT NULL,
+    apPatCte VARCHAR(15) NOT NULL,
+    cuentaInsta VARCHAR(18) NOT NULL,
+    correoCte VARCHAR(30) NOT NULL,
+    calleCte VARCHAR(30) NOT NULL,
+    coloniaCte VARCHAR(20) NOT NULL,
+    cpCte INT NOT NULL,
+    numeroCte  VARCHAR(5) NOT NULL,
+    estadoRep VARCHAR(20) NOT NULL,
+    CONSTRAINT idClientePK PRIMARY KEY(idCliente),
+    CONSTRAINT cuentaInsta_Unique UNIQUE(cuentaInsta),
+    CONSTRAINT correoCte_Unique UNIQUE(correoCte));
+
+--Creacion CLIENTETEL
+CREATE TABLE CLIENTETEL(
+    idCliente INT NOT NULL,
+    telefonoCte CHAR(10) NOT NULL,
+    CONSTRAINT idClienteTelPK PRIMARY KEY(idcliente, telefonoCte),
+    CONSTRAINT telefonoCte_Unique UNIQUE(telefonoCte));
+
+
+--Creacion METODOENTREGA
+CREATE TABLE METODOENTREGA(
+    idEntrega INT NOT NULL,
+    fechaEntrega DATE NOT NULL,
+    CONSTRAINT idmetodoEntregaPK PRIMARY KEY(idEntrega));
+
+
+--Creacion PAQUETERIA
+CREATE TABLE PAQUETERIA(
+    idEntrega INT NOT NULL,
+    costoEnvio NUMBER(7,2) NOT NULL,
+    codigoRastreo VARCHAR(20) NOT NULL,
+    PaqueteriaDis VARCHAR(30) NOT NULL,
+    estatusEnvio VARCHAR(15) NOT NULL,
+    CONSTRAINT idEntregaPaPK PRIMARY KEY(idEntrega),
+    CONSTRAINT PaqueteriaDisCK CHECK(PaqueteriaDis IN('DHL', 'Correos de Mexico','Fedex')),
+    CONSTRAINT estatusEnvioCK CHECK(estatusEnvio IN ('Enviado','Entregado')),
+    CONSTRAINT codigoRastreo_Unique UNIQUE(codigoRastreo),
+    CONSTRAINT idEntregaFK FOREIGN KEY(idEntrega) REFERENCES METODOENTREGA);
+
+--Creacion PERSONAL
+CREATE TABLE PERSONAL(
+    idEntrega INT NOT NULL,
+    nombreReciPaquete VARCHAR(30),
+    calle VARCHAR(30) NOT NULL,
+    numero VARCHAR(5) NOT NULL,
+    cp INT NOT NULL,
+    colonia VARCHAR(30) NOT NULL,
+    CONSTRAINT idEntregaPePK PRIMARY KEY(idEntrega),
+    CONSTRAINT idEntregaPeFK FOREIGN KEY(idEntrega) REFERENCES METODOENTREGA);
+
+--Creacion COMPRA
+CREATE TABLE COMPRA(
+    idCompra INT NOT NULL,
+    idArticulo INT NOT NULL,
+    idCliente INT NOT NULL,
+    fechaPago DATE NOT NULL,
+    cantidadArticuloPedido INT NOT NULL,
+    costo NUMBER NOT NULL,
+    estadoCompraCorea VARCHAR(10) NOT NULL,
+    tipoPago VARCHAR(15) NOT NULL,
+    idEntrega INT,
+    CONSTRAINT idCompraPK PRIMARY KEY(idCompra),
+    CONSTRAINT idEntregaComFK FOREIGN KEY(idEntrega) REFERENCES METODOENTREGA,
+    CONSTRAINT idArticuloComFK FOREIGN KEY(idArticulo) REFERENCES articulo,
+    CONSTRAINT idClienteFK FOREIGN KEY(idCliente) REFERENCES cliente,
+    CONSTRAINT estadoCompraCoreaCK CHECK(estadoCompraCorea IN('Enviado', 'En tienda', 'Pendiente')),
+    CONSTRAINT tipoPagoCK CHECK(tipoPago IN('Transferencia','Deposito')),
+    CONSTRAINT idArtClifechaPed_Unique UNIQUE(idArticulo, idCliente, fechaPago));
+
+alter table clientetel add foreign key (idCliente) references cliente(idCliente);
+alter table proveedortel add foreign key (idProveedor) references proveedor(idProveedor);
+alter table proveedorcuentared add foreign key (idProveedor) references proveedor(idProveedor);
+ALTER TABLE paqueteria ADD nombEntrega CHAR(10) DEFAULT 'PAQUETERIA'; 
+ALTER TABLE personal ADD nombEntrega CHAR(8) DEFAULT 'PERSONAL'; 
+
+--Creacion Trigger
+--CREACION DISPARADOR ARTEMPORADA
+CREATE OR REPLACE TRIGGER verificar_fechas_trigger
+BEFORE INSERT OR UPDATE ON ARTEMPORADA
+FOR EACH ROW
+DECLARE
+    v_dias NUMBER;
+BEGIN
+    IF :NEW.fechaCierre <= :NEW.fechaInicio THEN
+        RAISE_APPLICATION_ERROR(-20001, 'La fecha de cierre debe ser mayor que la fecha de inicio');
+    ELSE
+        v_dias := TRUNC(:NEW.fechaCierre) - TRUNC(:NEW.fechaInicio);
+        :NEW.tiempoTemporada := TO_CHAR(v_dias);
+    END IF;
+END;
+/
+
+
+-- Creación del trigger COMPRA
+-- Crear el trigger en la tabla COMPRA
+CREATE OR REPLACE TRIGGER verifica_compra
+BEFORE INSERT ON COMPRA
+FOR EACH ROW
+DECLARE
+    vcantidadArticulo NUMBER(6,2);
+    vfechaCierre DATE;
+    vfechaInicio DATE;
+    vprecio NUMBER;
+    cantidadArticulo NUMBER(6,2); -- Declarar la variable cantidadArticulo
+BEGIN
+    -- Verificar que la fecha esté en la temporada
+    SELECT fechaInicio, fechaCierre INTO vfechaInicio, vfechaCierre
+    FROM ARTEMPORADA
+    WHERE idArticulo = :NEW.idArticulo;
+    
+    -- Verificar la cantidad y precio del artículo
+    SELECT cantidadArticulo, precioArticulo INTO vcantidadArticulo, vprecio
+    FROM ARTICULO
+    WHERE idArticulo = :NEW.idArticulo;
+    
+    -- Comparar fechas
+    IF :NEW.fechaPago < vfechaInicio OR :NEW.fechaPago > vfechaCierre THEN
+        RAISE_APPLICATION_ERROR(-20001, 'La fecha de compra no está dentro del rango de la temporada.');
+    END IF;
+    
+    -- Comparar disponibilidad
+    IF :NEW.cantidadArticuloPedido > vcantidadArticulo THEN
+        RAISE_APPLICATION_ERROR(-20002, 'La cantidad de artículos supera la disponibilidad.');
+    END IF;
+    
+    -- Calcular costo
+    :NEW.costo := :NEW.cantidadArticuloPedido * vprecio * 25;
+    
+    -- Actualizar la cantidad de artículos disponibles
+    UPDATE ARTICULO
+    SET cantidadArticulo = cantidadArticulo - :NEW.cantidadArticuloPedido
+    WHERE idArticulo = :NEW.idArticulo;
+    
+        -- Verificar si el artículo se agotó
+    SELECT cantidadArticulo INTO vcantidadArticulo
+    FROM ARTICULO
+    WHERE idArticulo = :NEW.idArticulo;
+    
+    IF vcantidadArticulo = 0 THEN
+        UPDATE ARTICULO
+        SET disponibilidad = 'Agotado'
+        WHERE idArticulo = :NEW.idArticulo;
+    END IF;
+END;
+/
+
+***TUPLAS***
+--TUPLAS PROVEEDOR 
+--TUPLA 1
+INSERT INTO PROVEEDOR (idProveedor, nombreProv, cuentaBancariaProv, correoProv)
+VALUES (1, 'KpopStore', '12765420391', 'infokpop@gmail.com');
+--TUPLA 2
+INSERT INTO PROVEEDOR (idProveedor, nombreProv, cuentaBancariaProv, correoProv)
+VALUES (2, 'Kmusic Mart', '45278652097', 'saleskmusic@gmail.com');
+--TUPLA 3
+INSERT INTO PROVEEDOR (idProveedor, nombreProv, cuentaBancariaProv, correoProv)
+VALUES (3, 'Enterteinment World', '89345729180', 'entertainmentw@gmail.com');
+--TUPLA 4
+INSERT INTO PROVEEDOR (idProveedor, nombreProv, cuentaBancariaProv, correoProv)
+VALUES (4, 'KFanatics', '86789342098', 'fanaticks@gmail.com');
+--TUPLA 5
+INSERT INTO PROVEEDOR (idProveedor, nombreProv, cuentaBancariaProv, correoProv)
+VALUES (5, 'KMerchandise World', '98326374701', 'merchkpop@gmail.com');
+--TUPLA 6
+INSERT INTO PROVEEDOR (idProveedor, nombreProv, cuentaBancariaProv, correoProv)
+VALUES (6, 'CultureK Bazaart', '87635298512', 'bazaartculture@gmail.com');
+--TUPLA 7
+INSERT INTO PROVEEDOR (idProveedor, nombreProv, cuentaBancariaProv, correoProv)
+VALUES (7, 'Music Shoppe', '876452809652', 'kpopmusics@gmail.com');
+--TUPLA 8
+INSERT INTO PROVEEDOR (idProveedor, nombreProv, cuentaBancariaProv, correoProv)
+VALUES (8, 'KIdol Emporium', '77863251098', 'kidolemporium@gmail.com');
+--TUPLA 9
+INSERT INTO PROVEEDOR (idProveedor, nombreProv, cuentaBancariaProv, correoProv)
+VALUES (9,'Korea Music', '99774532861', 'koreamus@gmail.com');
+--TUPLA 10
+INSERT INTO PROVEEDOR (idProveedor, nombreProv, cuentaBancariaProv, correoProv)
+VALUES (10, 'Entertainment Outlet', '32744590123', 'outletmusice@gmail.com');
+
+--TUPLAS PROVEEDORTEL
+--El 82 al inicio es porque marcamos desde Mexico a Corea, los números de Corea tienen 8 digitos
+--TUPLA 1
+INSERT INTO PROVEEDORTEL (idProveedor, telefonoProv)
+VALUES (1,'8223123456');
+--TUPLA 2
+INSERT INTO PROVEEDORTEL (idProveedor, telefonoProv)
+VALUES (2,'8283475123');
+--TUPLA 3
+INSERT INTO PROVEEDORTEL (idProveedor, telefonoProv)
+VALUES (3,'8276367521');
+--TUPLA 4
+INSERT INTO PROVEEDORTEL (idProveedor, telefonoProv)
+VALUES (4,'8289794326');
+--TUPLA 5
+INSERT INTO PROVEEDORTEL (idProveedor, telefonoProv)
+VALUES (5,'8202134177');
+--TUPLA 6
+INSERT INTO PROVEEDORTEL (idProveedor, telefonoProv)
+VALUES (6,'8212548902');
+--TUPLA 7
+INSERT INTO PROVEEDORTEL (idProveedor, telefonoProv)
+VALUES (7,'8298022341');
+--TUPLA 8
+INSERT INTO PROVEEDORTEL (idProveedor, telefonoProv)
+VALUES (8,'8290943216');
+--TUPLA 9
+INSERT INTO PROVEEDORTEL (idProveedor, telefonoProv)
+VALUES (9,'8243576318');
+--TUPLA 10
+INSERT INTO PROVEEDORTEL (idProveedor, telefonoProv)
+VALUES (10,'8255180294');
+
+--TUPLAS PROVEEDORCUENTARED 
+--TUPLA 1
+INSERT INTO PROVEEDORCUENTARED(idProveedor,cuentaRedSocialProv)
+VALUES (1,'@kpopStoreSales');
+--TUPLA 2
+INSERT INTO PROVEEDORCUENTARED(idProveedor, cuentaRedSocialProv)
+VALUES (2,'@kbuymusic');
+--TUPLA 3
+INSERT INTO PROVEEDORCUENTARED (idProveedor, cuentaRedSocialProv)
+VALUES (3,'@enterkworld');
+--TUPLA 4
+INSERT INTO PROVEEDORCUENTARED(idProveedor, cuentaRedSocialProv)
+VALUES (4,'@fanaticskp');
+--TUPLA 5
+INSERT INTO PROVEEDORCUENTARED (idProveedor, cuentaRedSocialProv)
+VALUES (5,'@merchkpop');
+--TUPLA 6
+INSERT INTO PROVEEDORCUENTARED (idProveedor, cuentaRedSocialProv)
+VALUES (6,'@koreanculture');
+--TUPLA 7
+INSERT INTO PROVEEDORCUENTARED(idProveedor, cuentaRedSocialProv)
+VALUES (7,'@kpoparadise');
+--TUPLA 8
+INSERT INTO PROVEEDORCUENTARED (idProveedor, cuentaRedSocialProv)
+VALUES (8,'@kidolemp');
+--TUPLA 9
+INSERT INTO PROVEEDORCUENTARED(idProveedor, cuentaRedSocialProv)
+VALUES (9,'@kkoreamusic');
+--TUPLA 10
+INSERT INTO PROVEEDORCUENTARED(idProveedor, cuentaRedSocialProv)
+VALUES (10,'@entertainmentlet');
+
+
+
+--TUPLAS ARTICULO
+--Tupla 1
+INSERT INTO ARTICULO(idArticulo,cantidadArticulo,disponibilidad,precioArticulo,
+nombArticulo,idProveedor) VALUES(1,100,'Disponible',10.00,'Foto Felix',1);
+--Tupla 2
+INSERT INTO ARTICULO(idArticulo,cantidadArticulo,disponibilidad,precioArticulo,
+nombArticulo,idProveedor) VALUES(2,100,'Disponible',5.00,'Pocky',2);
+--Tupla 3
+INSERT INTO ARTICULO(idArticulo,cantidadArticulo,disponibilidad,precioArticulo,
+nombArticulo,idProveedor) VALUES(3,100,'Disponible',20.00,'Bloqueador NACIFIC',3);
+--Tupla 4
+INSERT INTO ARTICULO(idArticulo,cantidadArticulo,disponibilidad,precioArticulo,
+nombArticulo,idProveedor) VALUES(4,200,'Disponible',5.00,'Pin Lee Know',1);
+--Tupla 5
+INSERT INTO ARTICULO(idArticulo,cantidadArticulo,disponibilidad,precioArticulo,
+nombArticulo,idProveedor) VALUES(5,100,'Disponible',1.00,'Foto Seugmin',2);
+--Tupla 6
+INSERT INTO ARTICULO(idArticulo,cantidadArticulo,disponibilidad,precioArticulo,
+nombArticulo,idProveedor) VALUES(6,300,'Disponible',30.00,'Album MAXIDENT',3);
+--Tupla 7
+INSERT INTO ARTICULO(idArticulo,cantidadArticulo,disponibilidad,precioArticulo,
+nombArticulo,idProveedor) VALUES(7,250,'Disponible',20.00,'Poster MAXIDENT',1);
+--Tupla 8
+INSERT INTO ARTICULO(idArticulo,cantidadArticulo,disponibilidad,precioArticulo,
+nombArticulo,idProveedor) VALUES(8,100,'Disponible',5.00,'Llavero SKZ',2);
+--Tupla 9
+INSERT INTO ARTICULO(idArticulo,cantidadArticulo,disponibilidad,precioArticulo,
+nombArticulo,idProveedor) VALUES(9,100,'Disponible',10.00,'Diario',3);
+--Tupla 10
+INSERT INTO ARTICULO(idArticulo,cantidadArticulo,disponibilidad,precioArticulo,
+nombArticulo,idProveedor) VALUES(10,100,'Disponible',10.00,'Foto Han',1);
+
+--TUPLAS ARTEMPORADA
+--Tupla 1
+INSERT INTO ARTEMPORADA(idArtTemporada,idArticulo,numTemporada,nombTemporada,
+fechaInicio,fechaCierre) VALUES(11,1,1,'Anio Nuevo','02/01/2023','12/01/2023');
+--Tupla 2
+INSERT INTO ARTEMPORADA(idArtTemporada,idArticulo,numTemporada,nombTemporada,
+fechaInicio,fechaCierre) VALUES(12,2,1,'Anio Nuevo','02/01/2023','12/01/2023');
+--Tupla 3
+INSERT INTO ARTEMPORADA(idArtTemporada,idArticulo,numTemporada,nombTemporada,
+fechaInicio,fechaCierre) VALUES(13,3,1,'Anio Nuevo','02/01/2023','12/01/2023');
+--Tupla 4
+INSERT INTO ARTEMPORADA(idArtTemporada,idArticulo,numTemporada,nombTemporada,
+fechaInicio,fechaCierre) VALUES(24,4,2,'Buenas Nuevas','04/01/2023','12/01/2023');
+--Tupla 5
+INSERT INTO ARTEMPORADA(idArtTemporada,idArticulo,numTemporada,nombTemporada,
+fechaInicio,fechaCierre) VALUES(25,5,2,'Buenas Nuevas','04/01/2023','12/01/2023');
+--Tupla 6
+INSERT INTO ARTEMPORADA(idArtTemporada,idArticulo,numTemporada,nombTemporada,
+fechaInicio,fechaCierre) VALUES(26,6,2,'Buenas Nuevas','04/01/2023','12/01/2023');
+--Tupla 7
+INSERT INTO ARTEMPORADA(idArtTemporada,idArticulo,numTemporada,nombTemporada,
+fechaInicio,fechaCierre) VALUES(27,7,2,'Buenas Nuevas','04/01/2023','12/01/2023');
+--Tupla 8
+INSERT INTO ARTEMPORADA(idArtTemporada,idArticulo,numTemporada,nombTemporada,
+fechaInicio,fechaCierre) VALUES(38,8,3,'Buenas Nuevas 2.0','12/01/2023','12/02/2023');
+--Tupla 9
+INSERT INTO ARTEMPORADA(idArtTemporada,idArticulo,numTemporada,nombTemporada,
+fechaInicio,fechaCierre) VALUES(39,9,3,'Buenas Nuevas 2.0','12/01/2023','12/02/2023');
+--Tupla 10
+INSERT INTO ARTEMPORADA(idArtTemporada,idArticulo,numTemporada,nombTemporada,
+fechaInicio,fechaCierre) VALUES(310,10,3,'Buenas Nuevas 2.0','12/01/2023','12/02/2023');
+
+-- TUPLAS METODOENTREGA
+--TUPLA 1
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (1, '01-06-2023');
+--TUPLA 2
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (2, '28-05-2023');
+--TUPLA 3
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (3, '02-06-2023');
+--TUPLA 4
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (4, '30-05-2023');
+--TUPLA 5
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (5, '03-06-2023');
+--TUPLA 6
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (6, '29-05-2023');
+--TUPLA 7
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (7, '04-06-2023');
+--TUPLA 8
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (8, '31-05-2023');
+--TUPLA 9
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (9, '05-06-2023');
+--TUPLA 10
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (10, '06-06-2023');
+--TUPLA 11
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (11, '01-06-2023');
+--TUPLA 12
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (12, '28-05-2023');
+--TUPLA 13
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (13, '02-06-2023');
+--TUPLA 14
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (14, '30-05-2023');
+--TUPLA 15
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (15, '03-06-2023');
+--TUPLA 16
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (16, '29-05-2023');
+--TUPLA 17
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (17, '04-06-2023');
+--TUPLA 18
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (18, '31-05-2023');
+--TUPLA 19
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (19, '05-06-2023');
+--TUPLA 20
+INSERT INTO METODOENTREGA (idEntrega, fechaEntrega) VALUES (20, '06-06-2023');
+
+-- TUPLAS PAQUETERIA
+--TUPLA 1
+INSERT INTO paqueteria (idEntrega, costoEnvio, codigoRastreo, PaqueteriaDis, estatusEnvio) VALUES (1, 100.00, 'ABC123', 'DHL', 'Enviado');
+--TUPLA 2
+INSERT INTO paqueteria (idEntrega, costoEnvio, codigoRastreo, PaqueteriaDis, estatusEnvio) VALUES (2, 50.00, 'DEF456', 'Correos de Mexico', 'Entregado');
+--TUPLA 3
+INSERT INTO paqueteria (idEntrega, costoEnvio, codigoRastreo, PaqueteriaDis, estatusEnvio) VALUES (3, 150.00, 'GHI789', 'Fedex', 'Enviado');
+--TUPLA 4
+INSERT INTO paqueteria (idEntrega, costoEnvio, codigoRastreo, PaqueteriaDis, estatusEnvio) VALUES (4, 100.00, 'JKL012', 'DHL', 'Entregado');
+--TUPLA 5
+INSERT INTO paqueteria (idEntrega, costoEnvio, codigoRastreo, PaqueteriaDis, estatusEnvio) VALUES (5, 50.00, 'MNO345', 'Correos de Mexico', 'Enviado');
+--TUPLA 6
+INSERT INTO paqueteria (idEntrega, costoEnvio, codigoRastreo, PaqueteriaDis, estatusEnvio) VALUES (6, 100.00, 'PQR678', 'DHL', 'Enviado');
+--TUPLA 7
+INSERT INTO paqueteria (idEntrega, costoEnvio, codigoRastreo, PaqueteriaDis, estatusEnvio) VALUES (7, 150.00, 'STU901', 'Fedex', 'Enviado');
+--TUPLA 8
+INSERT INTO paqueteria (idEntrega, costoEnvio, codigoRastreo, PaqueteriaDis, estatusEnvio) VALUES (8, 50.00, 'VWX234', 'Correos de Mexico', 'Enviado');
+--TUPLA 9
+INSERT INTO paqueteria (idEntrega, costoEnvio, codigoRastreo, PaqueteriaDis, estatusEnvio) VALUES (9, 100.00, 'YZA567', 'DHL', 'Enviado');
+--TUPLA 10
+INSERT INTO paqueteria (idEntrega, costoEnvio, codigoRastreo, PaqueteriaDis, estatusEnvio) VALUES (10, 150.00, 'BCD890', 'Fedex', 'Enviado');
+
+
+--TUPLAS PERSONAL
+--TUPLA 1
+INSERT INTO personal (idEntrega, nombreReciPaquete, calle, numero, cp, colonia) VALUES (11, 'Juan Pérez', 'Calle 123', '456', 12345, 'Colonia Centro');
+--TUPLA 2
+INSERT INTO personal (idEntrega, nombreReciPaquete, calle, numero, cp, colonia) VALUES (12, 'María Gómez', 'Avenida Principal', '789', 56789, 'Colonia San Miguel');
+--TUPLA 3
+INSERT INTO personal (idEntrega, nombreReciPaquete, calle, numero, cp, colonia) VALUES (13, 'Carlos López', 'Calle Flores', '10', 23456, 'Colonia Jardines');
+--TUPLA 4
+INSERT INTO personal (idEntrega, nombreReciPaquete, calle, numero, cp, colonia) VALUES (14, 'Ana Rodríguez', 'Avenida del Sol', '25', 67890, 'Colonia Vista Hermosa');
+--TUPLA 5
+INSERT INTO personal (idEntrega, nombreReciPaquete, calle, numero, cp, colonia) VALUES (15, 'Pedro Martínez', 'Calle del Bosque', '7', 34567, 'Colonia Bosques');
+--TUPLA 6
+INSERT INTO personal (idEntrega, nombreReciPaquete, calle, numero, cp, colonia) VALUES (16, 'Laura Sánchez', 'Avenida del Río', '18', 78901, 'Colonia Río Bravo');
+--TUPLA 7
+INSERT INTO personal (idEntrega, nombreReciPaquete, calle, numero, cp, colonia) VALUES (17, 'Alejandro Torres', 'Calle Primavera', '33', 45678, 'Colonia Las Flores');
+--TUPLA 8
+INSERT INTO personal (idEntrega, nombreReciPaquete, calle, numero, cp, colonia) VALUES (18, 'Sofía García', 'Avenida Libertad', '2', 89012, 'Colonia Libertad');
+--TUPLA 9
+INSERT INTO personal (idEntrega, nombreReciPaquete, calle, numero, cp, colonia) VALUES (19, 'Miguel Castro', 'Calle Lomas', '12', 56789, 'Colonia Lomas de San Juan');
+--TUPLA 10
+INSERT INTO personal (idEntrega, nombreReciPaquete, calle, numero, cp, colonia) VALUES (20, 'Fernanda Ramírez', 'Avenida Juárez', '55', 12345, 'Colonia Juárez');
+
+-- TUPLAS CLIENTE
+--Tupla 1
+INSERT INTO cliente VALUES (1, 'Julieta', 'Jimenez', 'JiJu97', 'julieta.jimenez@gmail.com', 'Zaragoza', 'Palma Sola', 96580, '1518', 'Veracruz');
+--Tupla 2
+INSERT INTO cliente VALUES (2, 'Jose', 'Mendoza', 'Jarkeus', 'judioerrante@hotmail.com', 'Isidro', 'Miltepec', 50020, '905', 'Edo. Mex');
+--Tupla 3
+INSERT INTO cliente VALUES (3, 'Aldair', 'Moreno', 'rialdaMG', 'moreno.alda@yahoo.com', '18 Norte', 'Remedios', 72377, '802', 'Puebla');
+--Tupla 4
+INSERT INTO cliente VALUES (4, 'Dorian', 'Rodriguez', 'Farid96', 'dorianfarid96@hotmail.com', 'Goldsmith', 'Polanco', 11560, '38', 'CDMX');
+--Tupla 5
+INSERT INTO cliente VALUES (5, 'Angelica', 'Miranda', 'angieadnarim', 'angiecorn@gmail.com', 'Morelos', 'Centro', 39300, '3', 'Guerrero');
+--Tupla 6
+INSERT INTO cliente VALUES (6, 'Francia', 'Flores', 'yaya97', 'francia.flores97@live.mx', '12 de octubre', 'Balderrama', 83180, '155', 'Sonora');
+
+--Tupla 7
+INSERT INTO cliente VALUES (7, 'Helena', 'Muez', 'muexhelena', 'muezhelena@yahoo.com', '8A Norte', 'Tapachula', 30700, '98', 'Chiapas');
+--Tupla 8
+INSERT INTO cliente VALUES (8, 'David', 'Martínez', 'davidVmars', 'davidcmartinez@live.mx', 'Leona Vicario', 'Ocampo', 61250, '914', 'Michoacan');
+--Tupla 9
+INSERT INTO cliente VALUES (9, 'Laura', 'Lujan', 'lalu_jan', 'laulujan@hotmail.com', 'Ramon F. Iturbide', 'Centro', 80000, '417', 'Sinaloa');
+--Tupla 10
+INSERT INTO cliente VALUES (10, 'Cesar', 'Becerra', 'cesaronB', 'cesaron_becerra@gmail.com', 'Francisco Juarez', 'Los Angeles', 38040, '10000', 'Guanajuato');
+
+--TUPLAS CLIENTETEL
+--Tupla 1
+INSERT INTO CLIENTETEL VALUES (1, '2254896541');
+--Tupla 2
+INSERT INTO CLIENTETEL VALUES (2, '5514523697');
+--Tupla 3
+INSERT INTO CLIENTETEL VALUES (2, '5575761315');
+--Tupla 4
+INSERT INTO CLIENTETEL VALUES (3, '2224578963');
+--Tupla 5
+INSERT INTO CLIENTETEL VALUES (4, '5565451278');
+--Tupla 6
+INSERT INTO CLIENTETEL VALUES (4, '5565451279');
+--Tupla 7
+INSERT INTO CLIENTETEL VALUES (4, '5565451280');
+--Tupla 8
+INSERT INTO CLIENTETEL VALUES (5, '7218448122');
+
+--Tupla 9
+INSERT INTO CLIENTETEL VALUES (6, '6225148697');
+--Tupla 10
+INSERT INTO CLIENTETEL VALUES (7, '9165248719');
+
+
+--TUPLAS COMPRA
+--Tupla 1
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (1,10,1,'19/01/2023',2,'En tienda','Transferencia',1);
+--Tupla 2
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (2,9,1,'20/01/2023',2,'En tienda','Transferencia',2);
+--Tupla 3
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (3,8,2,'29/01/2023',5,'En tienda','Transferencia',3);
+--Tupla 4
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (4,7,2,'11/01/2023',3,'En tienda','Deposito',4);
+--Tupla 5
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (5,6,3,'10/01/2023',5,'En tienda','Deposito',5);
+--Tupla 6
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (6,5,3,'05/01/2023',3,'En tienda','Transferencia',6);
+--Tupla 7
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (7,4,4,'10/01/2023',3,'En tienda','Transferencia',7);
+--Tupla 8
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (8,3,5,'09/01/2023',5,'En tienda','Deposito',8);
+--Tupla 9
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (9,2,6,'07/01/2023',4,'En tienda','Transferencia',9);
+--Tupla 10 
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (10,1,6,'07/01/2023',4,'En tienda','Deposito',10);
+--Tupla 11
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (11,10,10,'19/01/2023',2,'En tienda','Transferencia',11);
+--Tupla 12
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (12,9,9,'20/01/2023',2,'En tienda','Transferencia',12);
+--Tupla 13
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (13,8,8,'29/01/2023',5,'En tienda','Transferencia',13);
+--Tupla 14
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (14,7,10,'11/01/2023',3,'En tienda','Deposito',14);
+--Tupla 15
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (15,6,10,'10/01/2023',5,'En tienda','Deposito',15);
+--Tupla 16
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (16,5,9,'05/01/2023',3,'En tienda','Transferencia',16);
+--Tupla 17
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (17,4,7,'10/01/2023',3,'En tienda','Transferencia',17);
+--Tupla 18
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (18,3,8,'09/01/2023',5,'En tienda','Deposito',18);
+--Tupla 19
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (19,2,7,'07/01/2023',4,'En tienda','Transferencia',19);
+--Tupla 20 
+INSERT INTO compra (idCompra, idArticulo, idCliente, fechaPago, cantidadArticuloPedido, estadoCompraCorea, tipoPago, idEntrega) 
+VALUES (20,1,6,'08/01/2023',4,'En tienda','Deposito',20);
+
+*****CONSULTAS****
+--ALGEBRA RELACIONAL
+--Obtener los proveedores y sus artículos disponibles en la temporada numero 1
+SELECT PROVEEDOR.nombreProv, ARTICULO.nombArticulo
+FROM PROVEEDOR, ARTICULO, ARTEMPORADA
+WHERE PROVEEDOR.idProveedor = ARTICULO.idProveedor
+AND ARTICULO.idArticulo = ARTEMPORADA.idArticulo
+AND ARTICULO.disponibilidad = 'Disponible'
+AND ARTEMPORADA.numTemporada = 1;
+
+--Obtener el id, apellido, nombre, cobrado, fecha del pago y el tipo de pago dentro de un intervalo de fechas
+SELECT c.idcliente AS Id, c.appatcte AS Apellido, c.pilacte AS Nombre, k.costo AS cobro, k.fechapago, k.tipopago
+FROM cliente c, compra k
+WHERE c.idcliente = k.idcliente
+  AND k.fechapago >= TO_DATE('2023-01-10', 'YYYY-MM-DD')
+  AND k.fechapago <= TO_DATE('2023-01-12', 'YYYY-MM-DD')
+ORDER BY Id ASC;
+
+--Ver el nombre del Proveedor y su correo
+SELECT nombreProv, correoProv
+FROM PROVEEDOR
+WHERE nombreProv LIKE 'K%';
+
+--Obtener el id, apellido, nombre de los clientes que compraron más de 2 articulos de la temporada 1
+SELECT c.idcliente AS Id, c.appatcte AS Apellido, c.pilacte AS Nombre, SUM(co.cantidadarticulopedido) AS TotalArticulos
+FROM cliente c
+INNER JOIN compra co ON c.idcliente = co.idcliente
+INNER JOIN artemporada t ON co.idarticulo = t.idarticulo
+WHERE t.numtemporada = 1 
+GROUP BY c.idcliente, c.appatcte, c.pilacte
+HAVING SUM(co.cantidadarticulopedido) > 2;
+
+---CONSULTAS CON CONTRASTE DE AGRUPACION 
+--Obtener el número total de compras realizadas por cada cliente ordenado asc idCliente
+SELECT C.idCliente, C.pilaCte, C.apPatCte, COUNT(*) AS total_compras
+FROM CLIENTE C, COMPRA CO
+WHERE C.idCliente = CO.idCliente
+GROUP BY C.idCliente, C.pilaCte, C.apPatCte
+ORDER BY idCliente ASC;
+
+
+--Obtener el numero de entregas que ha tenido cada cliente ordenada asc idCliente
+SELECT C.idCliente, C.pilaCte, C.apPatCte, COUNT(ME.idEntrega) AS numEnvios
+FROM CLIENTE C, COMPRA CO, METODOENTREGA ME
+WHERE C.idCliente = CO.idCliente AND CO.idEntrega = ME.idEntrega
+GROUP BY C.idCliente, C.pilaCte, C.apPatCte
+ORDER BY idCliente ASC;
+
+--JOIN
+--Obtener la cantidad total de artículos disponibles por proveedor:
+SELECT p.idProveedor, SUM(a.cantidadArticulo) AS total_disponible
+FROM PROVEEDOR p
+INNER JOIN ARTICULO a ON p.idProveedor = a.idProveedor
+WHERE a.disponibilidad = 'Disponible'
+GROUP BY p.idProveedor
+ORDER BY idProveedor ASC;
+
+--Consulta: Obtener la cantidad total de artículos por temporada.
+SELECT numTemporada, SUM(cantidadArticulo) AS total_articulos
+FROM ARTEMPORADA at
+JOIN ARTICULO a ON at.idArticulo = a.idArticulo
+GROUP BY numTemporada
+ORDER BY numTemporada ASC;
+
+--PROCEDIMIENTO
+--Procedimiento para imprimir los articulos disponibles para el dia de consulta
+--al igual que su id y cantidad 
+CREATE OR REPLACE PROCEDURE obtenerArticulosDisponibles(dia IN DATE) AS
+BEGIN
+  FOR rec IN (
+    SELECT a.idArticulo, a.nombArticulo, a.cantidadArticulo
+    FROM ARTICULO a
+    INNER JOIN ARTEMPORADA at ON a.idArticulo = at.idArticulo
+    WHERE a.disponibilidad = 'Disponible'
+    AND at.fechaInicio <= dia AND at.fechaCierre >= dia
+  ) LOOP
+    DBMS_OUTPUT.PUT_LINE('idArticulo: ' || rec.idArticulo || ', nombArticulo: ' || rec.nombArticulo || ', cantidadArticulo: ' || rec.cantidadArticulo);
+  END LOOP;
+END;
+/
+--EJECUCION PROCEDIMIENTO
+EXEC obtenerArticulosDisponibles(TO_DATE('10-01-2023', 'DD-MM-YYYY'));
+
+
+CREATE OR REPLACE PROCEDURE obtenerArticulosNODisponibles(dia IN DATE) AS
+BEGIN
+  FOR rec IN (
+    SELECT a.idArticulo, a.nombArticulo, a.cantidadArticulo
+    FROM ARTICULO a
+    INNER JOIN ARTEMPORADA at ON a.idArticulo = at.idArticulo
+    WHERE a.disponibilidad = 'Agotado'
+    AND at.fechaInicio <= dia AND at.fechaCierre >= dia
+  ) LOOP
+    DBMS_OUTPUT.PUT_LINE('idArticulo: ' || rec.idArticulo || ', nombArticulo: ' || rec.nombArticulo || ', cantidadArticulo: ' || rec.cantidadArticulo);
+  END LOOP;
+END;
+/
+--EJECUCION PROCEDIMIENTO
+EXEC obtenerArticulosNODisponibles(TO_DATE('10-01-2023', 'DD-MM-YYYY'));
+
+--Une los contactos del proveedor con identificador 1
+SELECT idProveedor, telefonoProv AS contacto
+FROM PROVEEDORTEL
+WHERE idProveedor = 1
+UNION
+SELECT idProveedor, cuentaRedSocialProv
+FROM PROVEEDORCUENTARED
+WHERE idProveedor = 1;
+
+--FUNCION CONTAR entregas
+CREATE OR REPLACE FUNCTION contar_entregas_cliente
+RETURN SYS_REFCURSOR IS
+    resultado SYS_REFCURSOR;
+BEGIN
+    OPEN resultado FOR
+        SELECT c.pilaCte, c.apPatCte, a.nombArticulo, COUNT(p.idEntrega) AS entregas_paqueteria, COUNT(pe.idEntrega) AS entregas_personal
+        FROM CLIENTE c
+        LEFT JOIN COMPRA co ON c.idCliente = co.idCliente
+        LEFT JOIN METODOENTREGA me ON co.idEntrega = me.idEntrega
+        LEFT JOIN PAQUETERIA p ON me.idEntrega = p.idEntrega
+        LEFT JOIN PERSONAL pe ON me.idEntrega = pe.idEntrega
+        LEFT JOIN ARTICULO a ON co.idArticulo = a.idArticulo
+        GROUP BY c.pilaCte, c.apPatCte, a.nombArticulo;
+
+    RETURN resultado;
+END;
+/
+
+
+SELECT contar_entregas_por_cliente();
+
+
+
+--VISTAS 
+--VISTA ArticulosTemporada
+CREATE VIEW ArticulosTemporada AS
+SELECT A.idArticulo, A.nombArticulo, AT.nombTemporada, AT.fechaInicio, AT.fechaCierre
+FROM ARTICULO A
+JOIN ARTEMPORADA AT ON A.idArticulo = AT.idArticulo;
+
+--Para ver la vista creada se pone
+SELECT * FROM ArticulosTemporada;
+
+--Compras realizadas con los detalles del artículo y el cliente
+CREATE VIEW detcomp AS 
+SELECT cp.idCompra, a.nombArticulo, c.pilaCte, cp.fechaPago, cp.cantidadArticuloPedido, cp.costo, cp.tipoPago
+FROM COMPRA cp 
+JOIN ARTICULO a ON cp.idArticulo=a.idArticulo 
+JOIN CLIENTE c ON cp.idCliente=c.idCliente;
+
+--Para ver la vista creada se pone
+SELECT * FROM detcomp;
+
+
+CREATE VIEW vista_entregas AS
+SELECT c.pilaCte, c.apPatCte, a.nombArticulo,
+       COUNT(p.idEntrega) AS entregas_paqueteria,
+       COUNT(pe.idEntrega) AS entregas_personal
+FROM cliente c
+LEFT JOIN compra co ON c.idCliente = co.idCliente
+LEFT JOIN metodoentrega m ON co.idEntrega = m.idEntrega
+LEFT JOIN paqueteria p ON m.idEntrega = p.idEntrega
+LEFT JOIN personal pe ON m.idEntrega = pe.idEntrega
+LEFT JOIN articulo a ON co.idArticulo = a.idArticulo
+GROUP BY c.pilaCte, c.apPatCte, a.nombArticulo;
+
+--Para ver la vista creada se pone
+SELECT * FROM vista_entregas;
+
+
+
+OPCIONAL
+--Para obtener todas las entregas de paquetería y personal que ha 
+--tenido cada cliente, puedes utilizar la siguiente consulta:
+SELECT C.idCliente, C.pilaCte, C.apPatCte, M.idEntrega
+FROM CLIENTE C
+LEFT JOIN COMPRA CO ON C.idCliente = CO.idCliente
+LEFT JOIN METODOENTREGA M ON CO.idEntrega = M.idEntrega
+LEFT JOIN PAQUETERIA P ON M.idEntrega = P.idEntrega
+LEFT JOIN PERSONAL PE ON M.idEntrega = PE.idEntrega;
+
+
+--para ver solo los numero de personal que ha tenido cada cliente
+SELECT C.idCliente, C.pilaCte, C.apPatCte, PE.idEntrega AS idEntrega_PERSONAL
+FROM CLIENTE C
+RIGHT JOIN COMPRA CO ON C.idCliente = CO.idCliente
+RIGHT JOIN METODOENTREGA M ON CO.idEntrega = M.idEntrega
+RIGHT JOIN PERSONAL PE ON M.idEntrega = PE.idEntrega;
+
+
+--para ver solo los numero de paquetes que ha tenido cada cliente
+SELECT C.idCliente, C.pilaCte, C.apPatCte, PE.idEntrega AS idEntrega_PAQUETERIA
+FROM CLIENTE C
+RIGHT JOIN COMPRA CO ON C.idCliente = CO.idCliente
+RIGHT JOIN METODOENTREGA M ON CO.idEntrega = M.idEntrega
+RIGHT JOIN PERSONAL PE ON M.idEntrega = PE.idEntrega;
+
+---Para ver el numero de entregas personales y paqueteria ha tenido cada cliente
+SELECT C.idCliente, C.pilaCte, C.apPatCte, COUNT(DISTINCT PE.idEntrega) AS Personal, COUNT(DISTINCT P.idEntrega) AS Paqueteria
+FROM CLIENTE C
+RIGHT JOIN COMPRA CO ON C.idCliente = CO.idCliente
+RIGHT JOIN METODOENTREGA M ON CO.idEntrega = M.idEntrega
+LEFT JOIN PERSONAL PE ON M.idEntrega = PE.idEntrega 
+LEFT JOIN PAQUETERIA P ON M.idEntrega = P.idEntrega
+GROUP BY C.idCliente, C.pilaCte, C.apPatCte
+ORDER BY C.idCliente;
+
+--Para obtener el número de artículos comprados por cada cliente y 
+--en qué temporada lo hizo, puedes utilizar la siguiente consulta:
+SELECT C.idCliente, C.pilaCte, C.apPatCte, AT.nombTemporada, sum(co.cantidadArticuloPedido) AS numArticulosComprados
+FROM CLIENTE C
+JOIN COMPRA CO ON C.idCliente = CO.idCliente
+JOIN ARTEMPORADA AT ON CO.idArticulo = AT.idArticulo AND CO.fechaPago BETWEEN AT.fechaInicio AND AT.fechaCierre
+GROUP BY C.idCliente, C.pilaCte, C.apPatCte, AT.nombTemporada;
+
+
+---¿Cuántos artículos han comprado los clientes en "x" temporada que se hayan entregado de forma personal
+SELECT C.idCliente, C.pilaCte, C.apPatCte, AT.nombTemporada,pe.idEntrega, sum(co.cantidadArticuloPedido) AS numArticulosComprados
+FROM CLIENTE C
+JOIN COMPRA CO ON C.idCliente = CO.idCliente
+JOIN ARTEMPORADA AT ON CO.idArticulo = AT.idArticulo
+join METODOENTREGA me on me.idEntrega=co.idEntrega 
+join personal pe on pe.idEntrega=me.idEntrega
+AND CO.fechaPago BETWEEN AT.fechaInicio AND AT.fechaCierre
+GROUP BY C.idCliente, C.pilaCte, C.apPatCte, AT.nombTemporada,pe.idEntrega;
+
+--nombre completo, tel de clientes que hicieron compra en temporada 1
+SELECT C.idCliente, C.pilaCte, C.apPatCte,ct.telefono, tempo.numtemporada AS TEMPORADA
+FROM CLIENTE C
+join compra co on co.idCliente=c.idCliente
+join articulo ar on ar.idarticulo=co.idarticulo
+join artemporada tempo on tempo.idArticulo=ar.idarticulo
+order by c.idcliente;
+
+
+--La cantidad de artículos que ha comprando un cliente de la 
+--temporada 1, además de su método de entrega y el proveedor del artículo
+SELECT C.idCliente, C.pilaCte, C.apPatCte, COUNT(DISTINCT PE.idEntrega) AS Personal, 
+COUNT(DISTINCT P.idEntrega) AS Paqueteria,sum(DISTINCT co.cantidadarticulopedido) 
+AS CantidadArticulos, M.idEntrega, P.nombreProv
+FROM CLIENTE C
+JOIN COMPRA CO ON C.idCliente = CO.idCliente
+JOIN METODOENTREGA M ON CO.idEntrega = M.idEntrega
+JOIN ARTEMPORADA AT ON CO.idArticulo = AT.idArticulo
+JOIN ARTICULO A ON CO.idArticulo = A.idArticulo
+JOIN PROVEEDOR P ON A.idProveedor = P.idProveedor 
+LEFT JOIN PERSONAL PE ON M.idEntrega = PE.idEntrega 
+LEFT JOIN PAQUETERIA P ON M.idEntrega = P.idEntrega
+WHERE AT.numTemporada = 1
+group by C.idCliente, C.pilaCte, C.apPatCte, M.idEntrega, P.nombreProv, co.cantidadarticulopedido
+ORDER BY C.idCliente;
