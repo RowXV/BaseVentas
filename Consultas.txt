@@ -1,0 +1,252 @@
+
+----------------------------------------------------------------------CLIENTES----------------------------------------------------------------------
+
+--Obtener el id, apellido, nombre, cobrado, fecha del pago y el tipo de pago dentro de un intervalo de fechas
+SELECT c.idcliente AS Id, c.appatcte AS Apellido, c.pilacte AS Nombre, k.costo AS cobro, k.fechapago, k.tipopago
+FROM cliente c, compra k
+WHERE c.idcliente = k.idcliente
+  AND k.fechapago >= TO_DATE('2023-01-10', 'YYYY-MM-DD')
+  AND k.fechapago <= TO_DATE('2023-01-12', 'YYYY-MM-DD')
+ORDER BY Id ASC;
+
+--Informacion general de cliente, articulo, cantidad y el total de una compra
+SELECT c.idCliente, c.pilaCte, c.apPatCte, a.nombArticulo, SUM(co.cantidadArticuloPedido) AS CantidadArticulos, SUM(co.costo) AS CostoTotal
+FROM CLIENTE c
+JOIN COMPRA co ON c.idCliente = co.idCliente
+JOIN ARTICULO a ON co.idArticulo = a.idArticulo
+GROUP BY c.idCliente, c.pilaCte, c.apPatCte, a.nombArticulo
+ORDER BY idcliente ASC;
+
+--La cantidad de artículos que ha comprando un cliente de la 
+--temporada 1, además de su método de entrega y el proveedor del artículo
+SELECT C.idCliente, C.pilaCte, C.apPatCte, COUNT(DISTINCT PE.idEntrega) AS Personal, 
+COUNT(DISTINCT P.idEntrega) AS Paqueteria,sum(DISTINCT co.cantidadarticulopedido) 
+AS CantidadArticulos, M.idEntrega, P.nombreProv
+FROM CLIENTE C
+JOIN COMPRA CO ON C.idCliente = CO.idCliente
+JOIN METODOENTREGA M ON CO.idEntrega = M.idEntrega
+JOIN ARTEMPORADA AT ON CO.idArticulo = AT.idArticulo
+JOIN ARTICULO A ON CO.idArticulo = A.idArticulo
+JOIN PROVEEDOR P ON A.idProveedor = P.idProveedor 
+LEFT JOIN PERSONAL PE ON M.idEntrega = PE.idEntrega 
+LEFT JOIN PAQUETERIA P ON M.idEntrega = P.idEntrega
+WHERE AT.numTemporada = 1
+group by C.idCliente, C.pilaCte, C.apPatCte, M.idEntrega, P.nombreProv, co.cantidadarticulopedido
+ORDER BY C.idCliente;
+
+--Obtener el id, apellido, nombre de los clientes que compraron más de 2 articulos de la temporada 1
+SELECT c.idcliente AS Id, c.appatcte AS Apellido, c.pilacte AS Nombre, SUM(co.cantidadarticulopedido) AS TotalArticulos
+FROM cliente c
+INNER JOIN compra co ON c.idcliente = co.idcliente
+INNER JOIN artemporada t ON co.idarticulo = t.idarticulo
+WHERE t.numtemporada = 1 
+GROUP BY c.idcliente, c.appatcte, c.pilacte
+HAVING SUM(co.cantidadarticulopedido) > 2;
+
+--Obtiene id, pila cliente, metodo de entrga, cantidad de articlos, id entrega, nombre provedor y la temporada
+SELECT C.idCliente, C.pilaCte,CASE
+    WHEN P.idEntrega IS NOT NULL THEN 'Paquetería'
+    WHEN PE.idEntrega IS NOT NULL THEN 'Personal'
+  END AS MetodoEntrega, 
+sum(DISTINCT co.cantidadarticulopedido) 
+AS CantidadArticulos, M.idEntrega, P.nombreProv,at.numtemporada
+FROM CLIENTE C
+JOIN COMPRA CO ON C.idCliente = CO.idCliente
+JOIN METODOENTREGA M ON CO.idEntrega = M.idEntrega
+JOIN ARTEMPORADA AT ON CO.idArticulo = AT.idArticulo
+JOIN ARTICULO A ON CO.idArticulo = A.idArticulo
+JOIN PROVEEDOR P ON A.idProveedor = P.idProveedor 
+LEFT JOIN PERSONAL PE ON M.idEntrega = PE.idEntrega 
+LEFT JOIN PAQUETERIA P ON M.idEntrega = P.idEntrega
+GROUP BY
+  CASE
+    WHEN P.idEntrega IS NOT NULL THEN 'Paquetería'
+    WHEN PE.idEntrega IS NOT NULL THEN 'Personal' 
+    END, C.idCliente, C.pilaCte, C.apPatCte, M.idEntrega, P.nombreProv, co.cantidadarticulopedido, at.numtemporada
+ORDER BY at.numtemporada,c.idcliente;
+
+--nombre completo, tel de clientes que hicieron compra en temporada 1
+SELECT C.idCliente, C.pilaCte, C.apPatCte,ct.telefonocte, tempo.numtemporada AS TEMPORADA
+FROM CLIENTE C
+join compra co on co.idCliente=c.idCliente
+join clientetel ct on ct.idcliente=c.idcliente
+join articulo ar on ar.idarticulo=co.idarticulo
+join artemporada tempo on tempo.idArticulo=ar.idarticulo
+where tempo.numtemporada=1
+order by c.idcliente;
+
+--La cantidad de artículos que ha comprando un cliente de la 
+--temporada x, además de su método de entrega y el proveedor del artículo
+SELECT C.idCliente, C.pilaCte, C.apPatCte, COUNT(DISTINCT PE.idEntrega) AS Personal, 
+COUNT(DISTINCT P.idEntrega) AS Paqueteria,sum(DISTINCT co.cantidadarticulopedido) 
+AS CantidadArticulos, M.idEntrega, P.nombreProv,at.numtemporada
+FROM CLIENTE C
+JOIN COMPRA CO ON C.idCliente = CO.idCliente
+JOIN METODOENTREGA M ON CO.idEntrega = M.idEntrega
+JOIN ARTEMPORADA AT ON CO.idArticulo = AT.idArticulo
+JOIN ARTICULO A ON CO.idArticulo = A.idArticulo
+JOIN PROVEEDOR P ON A.idProveedor = P.idProveedor 
+LEFT JOIN PERSONAL PE ON M.idEntrega = PE.idEntrega 
+LEFT JOIN PAQUETERIA P ON M.idEntrega = P.idEntrega
+group by C.idCliente, C.pilaCte, C.apPatCte, M.idEntrega, P.nombreProv, co.cantidadarticulopedido, at.numtemporada
+ORDER BY at.numtemporada,c.idcliente
+
+--Obtener los clientes que tienen cuenta en Instagram:
+SELECT *FROM CLIENTE WHERE cuentainsta IS NOT NULL;
+
+--Obtener las compras realizadas por un cliente específico:
+SELECT c.*, a.idarticulo
+FROM COMPRA c 
+JOIN ARTICULO a ON c.idArticulo = a.idArticulo
+WHERE c.idCliente =2;
+
+--Para obtener el número de artículos comprados por cada cliente y 
+--en qué temporada lo hizo, puedes utilizar la siguiente consulta:
+SELECT C.idCliente, C.pilaCte, C.apPatCte, AT.nombTemporada, sum(co.cantidadArticuloPedido) AS numArticulosComprados
+FROM CLIENTE C
+JOIN COMPRA CO ON C.idCliente = CO.idCliente
+JOIN ARTEMPORADA AT ON CO.idArticulo = AT.idArticulo AND CO.fechaPago BETWEEN AT.fechaInicio AND AT.fechaCierre
+GROUP BY C.idCliente, C.pilaCte, C.apPatCte, AT.nombTemporada;
+
+---¿Cuántos artículos han comprado los clientes en "x" temporada que se hayan entregado de forma personal
+SELECT C.idCliente, C.pilaCte, C.apPatCte, AT.nombTemporada,pe.idEntrega, sum(co.cantidadArticuloPedido) AS numArticulosComprados
+FROM CLIENTE C
+JOIN COMPRA CO ON C.idCliente = CO.idCliente
+JOIN ARTEMPORADA AT ON CO.idArticulo = AT.idArticulo
+join METODOENTREGA me on me.idEntrega=co.idEntrega 
+join personal pe on pe.idEntrega=me.idEntrega
+AND CO.fechaPago BETWEEN AT.fechaInicio AND AT.fechaCierre
+GROUP BY C.idCliente, C.pilaCte, C.apPatCte, AT.nombTemporada,pe.idEntrega;
+
+--Obtener el numero de entregas que ha tenido cada cliente ordenada asc idCliente
+SELECT C.idCliente, C.pilaCte, C.apPatCte, COUNT(ME.idEntrega) AS numEnvios
+FROM CLIENTE C, COMPRA CO, METODOENTREGA ME
+WHERE C.idCliente = CO.idCliente AND CO.idEntrega = ME.idEntrega
+GROUP BY C.idCliente, C.pilaCte, C.apPatCte
+ORDER BY idCliente ASC;
+
+--Obtener el número total de compras realizadas por cada cliente ordenado asc idCliente
+SELECT C.idCliente, C.pilaCte, C.apPatCte, COUNT(*) AS total_compras
+FROM CLIENTE C, COMPRA CO
+WHERE C.idCliente = CO.idCliente
+GROUP BY C.idCliente, C.pilaCte, C.apPatCte
+ORDER BY idCliente ASC;
+
+--Para obtener todas las entregas de paquetería y personal que ha 
+--tenido cada cliente, puedes utilizar la siguiente consulta:
+SELECT C.idCliente, C.pilaCte, C.apPatCte, M.idEntrega,
+    CASE
+    WHEN P.idEntrega IS NOT NULL THEN 'Paquetería'
+    WHEN PE.idEntrega IS NOT NULL THEN 'Personal'
+    END AS MetodoEntrega
+FROM CLIENTE C
+LEFT JOIN COMPRA CO ON C.idCliente = CO.idCliente
+LEFT JOIN METODOENTREGA M ON CO.idEntrega = M.idEntrega
+LEFT JOIN PAQUETERIA P ON M.idEntrega = P.idEntrega
+LEFT JOIN PERSONAL PE ON M.idEntrega = PE.idEntrega;
+
+--para ver solo los numero de entrega personal que ha tenido cada cliente
+SELECT C.idCliente, C.pilaCte, C.apPatCte, PE.idEntrega AS idEntrega_PERSONAL
+FROM CLIENTE C
+RIGHT JOIN COMPRA CO ON C.idCliente = CO.idCliente
+RIGHT JOIN METODOENTREGA M ON CO.idEntrega = M.idEntrega
+RIGHT JOIN PERSONAL PE ON M.idEntrega = PE.idEntrega;
+
+--para ver solo los numero de paquetes que ha tenido cada cliente
+SELECT C.idCliente, C.pilaCte, C.apPatCte, PE.idEntrega AS idEntrega_PAQUETERIA
+FROM CLIENTE C
+RIGHT JOIN COMPRA CO ON C.idCliente = CO.idCliente
+RIGHT JOIN METODOENTREGA M ON CO.idEntrega = M.idEntrega
+RIGHT JOIN PERSONAL PE ON M.idEntrega = PE.idEntrega;
+
+---Para ver el numero de entregas personales y paqueteria ha tenido cada cliente
+SELECT C.idCliente, C.pilaCte, C.apPatCte, COUNT(DISTINCT PE.idEntrega) AS Personal, COUNT(DISTINCT P.idEntrega) AS Paqueteria
+FROM CLIENTE C
+RIGHT JOIN COMPRA CO ON C.idCliente = CO.idCliente
+RIGHT JOIN METODOENTREGA M ON CO.idEntrega = M.idEntrega
+LEFT JOIN PERSONAL PE ON M.idEntrega = PE.idEntrega 
+LEFT JOIN PAQUETERIA P ON M.idEntrega = P.idEntrega
+GROUP BY C.idCliente, C.pilaCte, C.apPatCte
+ORDER BY C.idCliente;
+
+--CLIENTES que han realizado una compra con sus correos
+SELECT DISTINCT c.pilaCte, c.correoCte
+FROM CLIENTE c
+JOIN COMPRA co ON c.idCliente = co.idCliente;
+
+--Nombre de cliente, articulo que compro y la fecha en que pago
+SELECT c.pilaCte, a.nombArticulo, co.fechaPago
+FROM CLIENTE c
+JOIN COMPRA co ON c.idCliente = co.idCliente
+JOIN ARTICULO a ON co.idArticulo = a.idArticulo;
+
+
+----------------------------------------------------------------------PROVEEDOR----------------------------------------------------------------------
+
+--Obtener los proveedores junto con sus números de teléfono:
+SELECT p.nombreProv, pt.telefonoProv
+FROM PROVEEDOR p 
+JOIN PROVEEDORTEL pt ON p.idProveedor = pt.idProveedor;
+
+--Obtener los proveedores, su telefono y sus cuentas bancarias
+SELECT nombreProv,telefonoProv, cuentaBancariaProv
+FROM PROVEEDOR p
+JOIN proveedortel t on p.idproveedor = t.idproveedor
+ORDER BY p.idProveedor;
+
+--Ver el nombre del Proveedor y su correo de provedores que empiecen con K
+SELECT nombreProv, correoProv FROM PROVEEDOR 
+WHERE nombreProv LIKE 'K%';
+
+--Obtener los artículos disponibles junto con su proveedor:
+SELECT a.disponibilidad, p.nombreProv
+FROM ARTICULO a 
+JOIN PROVEEDOR p ON a.idProveedor = p.idProveedor
+WHERE a.disponibilidad = 'Agotado';
+
+--Obtener la cantidad total de artículos disponibles por proveedor:
+SELECT p.idProveedor, SUM(a.cantidadArticulo) AS total_disponible
+FROM PROVEEDOR p
+INNER JOIN ARTICULO a ON p.idProveedor = a.idProveedor
+WHERE a.disponibilidad = 'Disponible'
+GROUP BY p.idProveedor
+ORDER BY idProveedor ASC;
+
+--Obtener los proveedores y sus cuentas de redes sociales:
+SELECT p.nombreProv, c.cuentaredsocialprov
+FROM PROVEEDOR p
+JOIN proveedorcuentared c ON p.idProveedor= c.idProveedor;
+
+--ALGEBRA RELACIONAL
+--Obtener los proveedores y sus artículos disponibles en la temporada numero 1
+SELECT PROVEEDOR.nombreProv, ARTICULO.nombArticulo
+FROM PROVEEDOR, ARTICULO, ARTEMPORADA
+WHERE PROVEEDOR.idProveedor = ARTICULO.idProveedor
+AND ARTICULO.idArticulo = ARTEMPORADA.idArticulo
+AND ARTICULO.disponibilidad = 'Disponible'
+AND ARTEMPORADA.numTemporada = 1;
+
+----------------------------------------------------------------------ARTICULOS----------------------------------------------------------------------
+
+--Obtener los artículos agotados:
+SELECT *FROM ARTICULO WHERE disponibilidad= 'Disponible';
+
+--Obtener articulo, su cantidad, precio y temporada
+SELECT a.idarticulo, a.nombarticulo, a.cantidadarticulo, a.precioarticulo, t.numtemporada
+FROM articulo a
+JOIN artemporada t on a.idarticulo = t.idarticulo;
+
+--Obtener los artículos de temporada junto con su número de temporada:
+SELECT a.idarticulo, a.nombarticulo, t.numtemporada
+FROM ARTICULO a
+JOIN artemporada t ON a.idArticulo = t.idArticulo;
+
+--Consulta: Obtener la cantidad total de artículos por temporada.
+SELECT numTemporada, SUM(cantidadArticulo) AS total_articulos
+FROM ARTEMPORADA at
+JOIN ARTICULO a ON at.idArticulo = a.idArticulo
+GROUP BY numTemporada
+ORDER BY numTemporada ASC;
+
+
+
